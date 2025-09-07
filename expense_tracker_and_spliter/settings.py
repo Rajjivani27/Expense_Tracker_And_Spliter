@@ -37,7 +37,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'expense_tracker'
+    'expense_tracker',
+    'rest_framework',
 ]
 
 AUTH_USER_MODEL = 'expense_tracker.CustomUser'
