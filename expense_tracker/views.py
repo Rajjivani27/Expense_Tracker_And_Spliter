@@ -15,6 +15,16 @@ class CustomUserViewset(ModelViewSet):
         return CustomUserSerializer(*args,context=self.get_serializer_context(),**kwargs)
     
     def get_serializer_context(self):
-        return {'request':self.request}
+        return {'request' : self.request}
+    
+class ExpensesViewset(ModelViewSet):
+    def get_queryset(self):
+        return Expenses.objects.all()
+    
+    def get_serializer(self, *args, **kwargs):
+        return ExpenseSerializer(*args,context=self.get_serializer_context(),**kwargs)
+    
+    def get_serializer_context(self):
+        return {'request' : self.request}
 
 # Create your views here.
