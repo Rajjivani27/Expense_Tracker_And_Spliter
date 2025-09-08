@@ -1,4 +1,9 @@
 from django.db import models
+from django.db.models.signals import (
+    post_save,
+    post_delete
+)
+from django.dispatch import receiver
 from .managers import CustomUserManager
 from django.contrib.auth.models import AbstractBaseUser,PermissionsMixin
 
@@ -19,12 +24,18 @@ class CustomUser(AbstractBaseUser,PermissionsMixin):
         return self.username
 
 class OnlineExpenseTracker(models.Model):
-    user = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name="bank_account")
-    initial_amount = models.IntegerField(default=0)
+    user = models.OneToOneField(CustomUser,on_delete=models.CASCADE,related_name="bank_account")
+    amount = models.IntegerField(default=0)
+
+    def __str__(self):
+        return f"{self.user.username}'s Online Money"
 
 class CashExpenseTracker(models.Model):
-    user = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name="cash_account")
-    initial_amount = models.IntegerField(default=0)
+    user = models.OneToOneField(CustomUser,on_delete=models.CASCADE,related_name="cash_account")
+    amount = models.IntegerField(default=0)
+
+    def __str__(self):
+        return f"{self.user.username}'s Cash Money"
 
 class Expenses(models.Model):
     expense_choises = [
@@ -33,6 +44,7 @@ class Expenses(models.Model):
         ("food","FOOD"),
         ("snacks","SNACKS"),
         ("travel","TRAVEL"),
+        ("cab","CAB(Rapido,Uber,etc.)"),
         ("recharge","REACHARGE"),
         ("grocery","GROCERY"),
         ("dairy_item","DAIRY"),
@@ -43,11 +55,32 @@ class Expenses(models.Model):
     payment_choices = [
         ("online","ONLINE"),
         ("cash","CASH"),
-        ("card","CARD")
     ]
 
     amount = models.IntegerField()
+    user = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name="expenses")
     expense_type = models.CharField(choices=expense_choises,default="miscellaneous")
     payment_type = models.CharField(choices=payment_choices,default="cash")
+    date = models.DateField()
     note = models.TextField()
+
+@receiver([post_save],sender = Expenses)
+def update_account(sender,instance,created,*args,**kwargs):
+    if instance.payment_type is "online":
+        try:
+            user = instance.user
+            online_account = OnlineExpenseTracker.objects.get(user = user)
+            online_account.amount = online_account.amount - instance.amount
+            online_account.save()
+        except Exception as E:
+            raise E
+    else:
+        try:
+            user = instance.user
+            cash_account = CashExpenseTracker.objects.get(user = user)
+            cash_account.amount = cash_account.amount - instance.amount
+            cash_account.save()
+        except Exception as E:
+            raise E
+
 # Create your models here.
