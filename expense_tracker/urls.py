@@ -6,6 +6,7 @@ router = DefaultRouter()
 
 router.register('users',CustomUserViewset,basename="users")
 router.register('expenses',ExpensesViewset,basename="expenses")
+router.register('credit',CreditsViewSet,basename="credit")
 
 urlpatterns = [
 
