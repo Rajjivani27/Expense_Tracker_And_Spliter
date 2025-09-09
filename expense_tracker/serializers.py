@@ -52,7 +52,12 @@ class CustomUserSerializer(serializers.ModelSerializer):
 class ExpenseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Expenses
-        fields = ['amount','user','expense_type','payment_type','date','note']
+        fields = ['id','amount','user','expense_type','payment_type','date','note']
+
+class CreditSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Credit
+        fields = ['id','amount','user','payment_type','date','note']
     
 
     

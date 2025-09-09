@@ -49,6 +49,7 @@ class Expenses(models.Model):
         ("grocery","GROCERY"),
         ("dairy_item","DAIRY"),
         ("vegetables","VEGES"),
+        ("other","OTHER"),
         ("miscellaneous","MSCL")
     ]
 
@@ -63,6 +64,18 @@ class Expenses(models.Model):
     payment_type = models.CharField(choices=payment_choices,default="cash")
     date = models.DateField()
     note = models.TextField()
+
+class Credit(models.Model):
+    payment_choices = [
+        ("online","ONLINE"),
+        ("cash","CASH"),
+    ]
+    user = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name="account_credits")
+    amount = models.IntegerField()
+    payment_type = models.CharField(choices=payment_choices,default="online")
+    date = models.DateField()
+    note = models.TextField()
+
 
 @receiver([post_save],sender = Expenses)
 def update_account(sender,instance,created,*args,**kwargs):
@@ -79,6 +92,25 @@ def update_account(sender,instance,created,*args,**kwargs):
             user = instance.user
             cash_account = CashExpenseTracker.objects.get(user = user)
             cash_account.amount = cash_account.amount - instance.amount
+            cash_account.save()
+        except Exception as E:
+            raise E
+        
+@receiver([post_save],sender=Credit)
+def update_account_for_credit(sender,instance,created,*args,**kwargs):
+    if instance.payment_type is "online":
+        try:
+            user = instance.user
+            online_account = OnlineExpenseTracker.objects.get(user = user)
+            online_account.amount = online_account.amount + instance.amount
+            online_account.save()
+        except Exception as E:
+            raise E
+    else:
+        try:
+            user = instance.user
+            cash_account = CashExpenseTracker.objects.get(user = user)
+            cash_account.amount = cash_account.amount + instance.amount
             cash_account.save()
         except Exception as E:
             raise E
