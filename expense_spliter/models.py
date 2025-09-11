@@ -29,10 +29,9 @@ class FriendRequest(models.Model):
 @receiver(signal=[post_save],sender=FriendRequest)
 def request_creator(sender,instance,created,*args,**kwargs):
     if not created:
-        if instance.status == "friends":
-            Friends.objects.create(instance.requester,instance.requested)
+        if instance.status == "accepted":
+            Friends.objects.create(friends_one=instance.requester,friends_two=instance.requested)
         else:
-            print("Here")
             instance.delete()
 
         

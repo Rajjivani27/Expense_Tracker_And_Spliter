@@ -10,7 +10,12 @@ class FriendRequestViewset(ModelViewSet):
         return FriendRequest.objects.all()
     
     def get_serializer(self,*args,**kwargs):
-        return FriendRequestSerializer(*args,context=self.get_serializer_context,**kwargs)
+        request = self.request
+
+        if request.method == "POST":
+            return FriendRequestPostSerializer(*args,context=self.get_serializer_context(),**kwargs)
+        else:
+            return FriendRequestMainSerializer(*args,context=self.get_serializer_context(),**kwargs)
     
     def get_serializer_context(self):
         return {'request':self.request}
@@ -26,7 +31,7 @@ class FriendRequestViewset(ModelViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
-        return Response({'requested':'Your request has been sended successfully'},status=status.HTTP_201_CREATED)
+        return Response({'requested':'Your request has been sent successfully'},status=status.HTTP_201_CREATED)
 
     
 class FriendsViewset(ModelViewSet):
