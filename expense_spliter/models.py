@@ -7,7 +7,7 @@ from expense_tracker.models import *
 status_choices = [
     ("not_friend","NOT FRIENDS"),
     ("pending","PENDING"),
-    ("friends","FRIENDS")
+    ("accepted","ACCEPTED")
 ]
 
 class Friends(models.Model):
@@ -21,21 +21,18 @@ class Friends(models.Model):
 class FriendRequest(models.Model):
     requester = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name="friend_requsted")
     requested = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name="friend_requests")
-    status = models.CharField(choices=status_choices,default="not_friend")
+    status = models.CharField(choices=status_choices,default="pending")
 
     def __str__(self):
         return f"{self.requester.username} request to be friend with {self.requested.username}"
 
 @receiver(signal=[post_save],sender=FriendRequest)
 def request_creator(sender,instance,created,*args,**kwargs):
-    if created:
-        instance.status = "pending"
-        instance.save()
-
-    elif not created:
+    if not created:
         if instance.status == "friends":
             Friends.objects.create(instance.requester,instance.requested)
         else:
+            print("Here")
             instance.delete()
 
         
