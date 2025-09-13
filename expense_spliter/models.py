@@ -10,6 +10,16 @@ status_choices = [
     ("accepted","ACCEPTED")
 ]
 
+class Spliter(models.Model):
+    user = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name="spliter")
+    amount = models.IntegerField()
+    added_friends = models.ManyToManyField(CustomUser,related_name="added_friends")
+
+
+class Messages(models.Model):
+    user = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name="spliting_messages")
+    message = models.TextField()
+
 class Friends(models.Model):
     friends_one = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name="friends_one")
     friends_two = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name="friends_two")
