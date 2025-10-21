@@ -15,35 +15,26 @@ class Spliter(models.Model):
     amount = models.IntegerField()
     added_friends = models.ManyToManyField(CustomUser,related_name="added_friends")
 
+class OutgoingRequests(models.Model):
+    friend_to_be = models.ForeignKey(CustomUser,on_delete=models.CASCADE)
+    requester = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name="outgoing_requests")
+    time = models.DateTimeField(auto_now_add=True)
+    delete = models.BooleanField(default=False)
 
-class Messages(models.Model):
-    user = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name="spliting_messages")
-    message = models.TextField()
+    def __str__(self):
+        return f"{self.requester} -> {self.friend_to_be}"
+
+class IncomingRequests(models.Model):
+    requester = models.ForeignKey(CustomUser,on_delete=models.CASCADE)
+    accepting_person = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name="friend_requests")
+    time = models.DateTimeField(auto_now_add=True)
+    accepted = models.BooleanField(default=False)
+    rejected  = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.accepting_person} <- {self.requester}"
 
 class Friends(models.Model):
-    friends_one = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name="friends_one")
-    friends_two = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name="friends_two")
-    time_stamp = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.friends_one.username} and {self.friends_two.username} are friends"
-
-class FriendRequest(models.Model):
-    requester = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name="friend_requsted")
-    requested = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name="friend_requests")
-    status = models.CharField(choices=status_choices,default="pending")
-
-    def __str__(self):
-        return f"{self.requester.username} request to be friend with {self.requested.username}"
-
-@receiver(signal=[post_save],sender=FriendRequest)
-def request_creator(sender,instance,created,*args,**kwargs):
-    if not created:
-        if instance.status == "accepted":
-            Friends.objects.create(friends_one=instance.requester,friends_two=instance.requested)
-        else:
-            instance.delete()
-
-        
-
+    person1 = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name="friends_1")
+    person2 = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name="friends_2")
 # Create your models here.

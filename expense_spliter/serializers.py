@@ -14,27 +14,16 @@ class SpliterSerializer(serializers.ModelSerializer):
         model = Spliter
         fields = ['user','amount','added_friends']
 
-    def __init__(self, instance=None, data=..., **kwargs):
-        super().__init__(instance, data, **kwargs)
-        request = self.context.get("request")
-        if request:
-            user = CustomUser.objects.get(username="Raj_Jivani")
-            queryset = Friends.objects.filter(Q(friend_one=request.user) | Q(friend_two=request.user))
-            self.fields['added_friends'].queryset = queryset
-
-class FriendRequestPostSerializer(serializers.ModelSerializer):
-    status = serializers.CharField(read_only=True)
+class IncomingRequestSerializer(serializers.ModelSerializer):
+    requester = serializers.StringRelatedField()
+    accepting_person = serializers.StringRelatedField()
+    
     class Meta:
-        model = FriendRequest
-        fields = ['requester','requested','status']
+        model = IncomingRequests
+        fields = ['requester','accepting_person','accepted','rejected']
 
-class FriendRequestMainSerializer(serializers.ModelSerializer):
+class OutgoingRequestSerializer(serializers.ModelSerializer):
+    friend_to_be = serializers.StringRelatedField()
     class Meta:
-        model = FriendRequest
-        fields = ['requester','requested','status']
-
-class FriendsSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Friends
-        fields = '__all__'
+        model = OutgoingRequests
+        fields = ['friend_to_be']

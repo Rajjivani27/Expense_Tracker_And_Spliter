@@ -4,8 +4,8 @@ from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
 
-router.register('friend_request',FriendRequestViewset,basename="friend_request")
-router.register('friends',FriendsViewset,basename="friends")
+router.register(r"sent_requests",OutgoingRequestViewSet,basename="sent_requests")
+router.register(r"received_requests",IncomingRequestsViewSet,basename="received_requests")
 
 urlpatterns = [
     
