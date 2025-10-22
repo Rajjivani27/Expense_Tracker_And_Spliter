@@ -21,9 +21,16 @@ class IncomingRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = IncomingRequests
         fields = ['requester','accepting_person','accepted','rejected']
+        
 
 class OutgoingRequestSerializer(serializers.ModelSerializer):
-    friend_to_be = serializers.StringRelatedField()
     class Meta:
         model = OutgoingRequests
         fields = ['friend_to_be']
+
+class FriendsSerializer(serializers.ModelSerializer):
+    # person1 = serializers.StringRelatedField()
+    # person2 = serializers.StringRelatedField()
+    class Meta:
+        model = Friends
+        fields = ['id','person1','person2']
