@@ -9,98 +9,53 @@ from rest_framework.permissions import IsAuthenticated,AllowAny
 from rest_framework.decorators import action
 from django.db.transaction import atomic
 from rest_framework import status
+from rest_framework.exceptions import MethodNotAllowed
 
-class IncomingRequestsViewSet(ModelViewSet):
-    lookup_field = "pk"
-    def get_queryset(self):
-        return IncomingRequests.objects.all()
-    
+class FriendRequestsViewSet(ModelViewSet):
+    lookup_field = 'pk'
     def get_permissions(self):
-        user = self.request.user
-        if user.is_staff or user.is_superuser:
-            return [AllowAny()]
+        request = self.request
+
+        if request.method == 'destroy':
+            return [IsAuthorOrReadOnly()]
+        elif request.method == 'create' or request.method == 'get':
+            return [IsAuthenticated()]
+        else:
+            return [IsAuthenticated()]
         
-        if self.action == 'destroy' or self.action == 'update' or self.action == 'partial_update':
-            return [IsAcceptingPersonOrReadOnly()]
-        return [IsAuthenticated()]
+    def get_queryset(self):
+        return FriendRequest.objects.all()
     
-    @action(detail=False,methods=['get'])
-    def received_requests(self,request):
-        user = request.user
-        received_requests = IncomingRequests.objects.filter(accepting_person = user)
-        serializer = self.get_serializer(received_requests,many=True)
-        return Response(serializer.data)
-    
-    @atomic
-    def partial_update(self, request,pk):
-        print("I am here")
-        requests = self.get_queryset()
-        obj = get_object_or_404(requests,pk=pk)
-
-        data = request.data
-
-        self.check_object_permissions(request,obj)
-        serializer = self.get_serializer(instance = obj,data = data,partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-
-        return Response(serializer.data,status=status.HTTP_206_PARTIAL_CONTENT)
-
     def get_serializer(self, *args, **kwargs):
-        return IncomingRequestSerializer(*args,context=self.get_serializer_context(),**kwargs)
+        return FriendRequestSerializer(*args,context=self.get_serializer_context(),**kwargs)
     
     def get_serializer_context(self):
-        return {'request':self.request}
+        return {'request' : self.request}
     
-class OutgoingRequestViewSet(ModelViewSet):
-    lookup_field = "requester"
-
-    def get_permissions(self):
-        user = self.request.user
-        if user.is_staff or user.is_superuser:
-            return [AllowAny()]
-        
-        if self.action == 'destroy':
-            return [IsAuthorOrReadOnly()]
-        return [IsAuthenticated()]
-    
-    @action(detail=False,methods=['get'])
-    def sent_requests(self,request):
-        user = request.user
-        sent_requests = OutgoingRequests.objects.filter(requester=user)
-        serializer = self.get_serializer(sent_requests,many=True)
-        return Response(serializer.data)
-
-    def get_queryset(self):
-        return OutgoingRequests.objects.all()
-    
-    def get_serializer(self, *args, **kwargs):
-        return OutgoingRequestSerializer(*args,context=self.get_serializer_context(),**kwargs)
-    
-    def get_parser_context(self, http_request):
-        return {'request':self.request}
-    
-    @atomic
     def create(self, request, *args, **kwargs):
         data = request.data
 
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
+        serializer.save(requester=request.user)
 
-        serializer.save(requester = request.user)
+        return Response(serializer.data,status=status.HTTP_201_CREATED)
+    
+    def update(self, request, *args, **kwargs):
+        user = request.user
+        obj = self.get_object()
 
-        accepting_user = data.get('friend_to_be')
-        print(f"User : {request.user}")
-        
-        accepting_person = CustomUser.objects.get(id=accepting_user)
-        print(f"Accepting Person : {accepting_person}")
+        if user and ((user != obj.accepting_person) and (not user.is_staff) and (not user.is_superuser)) :
+            return Response({'detail':'You do not have permission to perform this action'},status=status.HTTP_403_FORBIDDEN)
+        return super().update(request, *args, **kwargs)
+    
+    def partial_update(self, request, *args, **kwargs):
+        user = request.user
+        obj = self.get_object()
 
-        IncomingRequests.objects.create(
-            requester = request.user,
-            accepting_person = accepting_person
-        )
-
-        return Response(data=serializer.data,status=status.HTTP_201_CREATED)
+        if user and ((user != obj.accepting_person) and (not user.is_staff) and (not user.is_superuser)) :
+            return Response({'detail':'You do not have permission to perform this action'},status=status.HTTP_403_FORBIDDEN)
+        return super().partial_update(request, *args, **kwargs)
 
 class FriendsViewSet(ModelViewSet):
     def get_permissions(self):

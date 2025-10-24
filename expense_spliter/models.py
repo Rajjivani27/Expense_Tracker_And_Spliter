@@ -16,23 +16,16 @@ class Spliter(models.Model):
     amount = models.IntegerField()
     added_friends = models.ManyToManyField(CustomUser,related_name="added_friends")
 
-class OutgoingRequests(models.Model):
-    friend_to_be = models.ForeignKey(CustomUser,on_delete=models.CASCADE)
-    requester = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name="outgoing_requests")
-    time = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return f"{self.requester} -> {self.friend_to_be}"
-
-class IncomingRequests(models.Model):
-    requester = models.ForeignKey(CustomUser,on_delete=models.CASCADE)
-    accepting_person = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name="friend_requests")
-    time = models.DateTimeField(auto_now_add=True)
+class FriendRequest(models.Model):
+    requester = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name="sent_requests")
+    accepting_person = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name="received_requests")
     accepted = models.BooleanField(default=False)
-    rejected  = models.BooleanField(default=False)
+    rejected = models.BooleanField(default=False)
+    sent_time = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.accepting_person} <- {self.requester}"
+        return f"{self.requester} -> {self.accepting_person}"
 
 class Friends(models.Model):
     person1 = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name="friends_1")
@@ -40,26 +33,14 @@ class Friends(models.Model):
 
     def __str__(self):
         return f"{self.person1} <-> {self.person2}"
-
-@receiver([post_save],sender=IncomingRequests)
-@transaction.atomic
-def incoming_friend_request(sender,instance,created,*args,**kwargs):
+    
+@receiver(signal=[post_save],sender=FriendRequest)
+def friend_request_accepted_or_rejected(sender,instance,created,*args,**kwargs):
     if not created:
-        try:
-            person1 = instance.requester
-            person2 = instance.accepting_person
-            if instance.accepted == True:
-                Friends.objects.create(person1=person1,person2=person2)
-                request = OutgoingRequests.objects.get(requester=person1,friend_to_be=person2)
-
-                instance.delete()
-                request.delete()
-            elif instance.rejected == True:
-                request = OutgoingRequests.objects.get(requester=person1,friend_to_be=person2)
-                request.delete()
-                instance.delete()
-        except Exception as E:
-            raise E
-
+        if instance.accepted == True:
+            Friends.objects.create(person1=instance.requester,person2=instance.accepting_person)
+            instance.delete()
+        elif instance.rejected == True:
+            instance.delete()
 
 # Create your models here.
