@@ -3,6 +3,8 @@ from .models import *
 from django.db.models import Q
 from expense_tracker.models import *
 from django.db.models.query import QuerySet
+from rest_framework.exceptions import ValidationError
+from rest_framework import status
 
 class SpliterSerializer(serializers.ModelSerializer):
     added_friends = serializers.PrimaryKeyRelatedField(
@@ -21,6 +23,20 @@ class FriendRequestSerializer(serializers.ModelSerializer):
         model = FriendRequest
         fields = ['accepting_person','accepted','rejected','time']
         read_only_fields = ['requester']
+
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        request = self.context['request']
+
+        if data['accepting_person'] == request.user:
+            raise serializers.ValidationError("You can't send friend request to your self")
+        
+        queryset = Friends.objects.filter(Q(person1 = request.user,person2 = data['accepting_person']) | Q(person1 = data['accepting_person'],person2 = request.user))
+
+        if queryset:
+            raise serializers.ValidationError("You can not send friend request to user who is already your friend")
+        
+        return data
         
 
     def get_fields(self):
