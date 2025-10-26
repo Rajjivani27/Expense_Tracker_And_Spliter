@@ -7,6 +7,13 @@ class IsAuthorOrReadOnly(BasePermission):
         
         return obj.requester == request.user
     
+class IsUserOrReadOnly(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if request.method == SAFE_METHODS:
+            return True
+        
+        return obj.user == request.user
+    
 class IsAcceptingPersonOrReadOnly(BasePermission):
     def has_object_permission(self, request, view, obj):
         if request.method == SAFE_METHODS:

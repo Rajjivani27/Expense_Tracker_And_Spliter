@@ -6,16 +6,35 @@ from django.db.models.query import QuerySet
 from rest_framework.exceptions import ValidationError
 from rest_framework import status
 
-class SpliterSerializer(serializers.ModelSerializer):
-    added_friends = serializers.PrimaryKeyRelatedField(
-        many=True,
-        queryset = CustomUser.objects.none()
-    )
-    user = serializers.StringRelatedField(read_only=True)
+# class SpliterSerializer(serializers.ModelSerializer):
+#     user = serializers.StringRelatedField(read_only=True)
 
-    class Meta:
-        model = Spliter
-        fields = ['user','amount','added_friends']
+#     class Meta:
+#         model = Spliter
+#         fields = ['user','amount','added_friends']
+
+#     def get_fields(self):
+#         fields = super().get_fields()
+
+#         request = self.context['request']
+
+#         queryset = Friends.objects.filter(Q(person1 = request.user) | Q(person2 = request.user))
+
+#         flat_ids = set()
+
+#         for q in queryset:
+#             if q.person1.id == request.user:
+#                 flat_ids.add(q.person2.id)
+#             else:
+#                 flat_ids.add(q.person1.id)
+
+#         friends = CustomUser.objects.filter(id__in = flat_ids)
+
+#         fields['added_friends'].queryset = friends
+
+#         return fields
+
+
 
 class FriendRequestSerializer(serializers.ModelSerializer):
     time = serializers.DateTimeField(read_only=True)

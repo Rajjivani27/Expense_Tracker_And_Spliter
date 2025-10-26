@@ -14,7 +14,7 @@ status_choices = [
 class Spliter(models.Model):
     user = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name="spliter")
     amount = models.IntegerField()
-    added_friends = models.ManyToManyField(CustomUser,related_name="added_friends")
+    added_friends_new = models.ManyToManyField(CustomUser,related_name="added_friends")
 
 
 class FriendRequest(models.Model):
