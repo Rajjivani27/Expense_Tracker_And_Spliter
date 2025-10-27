@@ -14,7 +14,27 @@ status_choices = [
 class Spliter(models.Model):
     user = models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name="spliter")
     amount = models.IntegerField()
-    added_friends_new = models.ManyToManyField(CustomUser,related_name="added_friends")
+    description = models.CharField(max_length=500)
+    added_friends = models.ManyToManyField(
+        CustomUser,
+        through = "SplitShare",
+        related_name="shared_splits"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.description} - {self.amount}"
+    
+
+class SplitShare(models.Model):
+    expense = models.ForeignKey(Spliter,on_delete=models.CASCADE)
+    user = models.ForeignKey(CustomUser,on_delete=models.CASCADE)
+    share_amount = models.DecimalField(max_digits=15,decimal_places=2)
+    is_paid = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.expense.user} owes {self.share_amount} for {self.expense.description} from You({self.user})"
+
 
 
 class FriendRequest(models.Model):

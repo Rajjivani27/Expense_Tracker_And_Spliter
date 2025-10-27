@@ -6,33 +6,44 @@ from django.db.models.query import QuerySet
 from rest_framework.exceptions import ValidationError
 from rest_framework import status
 
-# class SpliterSerializer(serializers.ModelSerializer):
-#     user = serializers.StringRelatedField(read_only=True)
+class SpliteShareSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SplitShare
+        fields = ['user','share_amount']
 
-#     class Meta:
-#         model = Spliter
-#         fields = ['user','amount','added_friends']
+    def get_fields(self):
+        fields = super().get_fields()
 
-#     def get_fields(self):
-#         fields = super().get_fields()
+        request = self.context['request']
 
-#         request = self.context['request']
+        queryset = Friends.objects.filter(Q(person1 = request.user) | Q(person2 = request.user))
 
-#         queryset = Friends.objects.filter(Q(person1 = request.user) | Q(person2 = request.user))
+        flat_ids = set()
 
-#         flat_ids = set()
+        for q in queryset:
+            if q.person1.id == request.user:
+                flat_ids.add(q.person2.id)
+            else:
+                flat_ids.add(q.person1.id)
+    
+        friends = CustomUser.objects.filter(id__in = flat_ids)
 
-#         for q in queryset:
-#             if q.person1.id == request.user:
-#                 flat_ids.add(q.person2.id)
-#             else:
-#                 flat_ids.add(q.person1.id)
+        fields['user'].queryset = friends
 
-#         friends = CustomUser.objects.filter(id__in = flat_ids)
+        return fields
 
-#         fields['added_friends'].queryset = friends
 
-#         return fields
+class SpliterSerializer(serializers.ModelSerializer):
+    user = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = Spliter
+        fields = ['user','amount','description']
+
+    @transaction.atomic
+    def create(self, validated_data):
+        spliter = Spliter.objects.create(**validated_data)
+        return spliter
 
 
 

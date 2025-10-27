@@ -11,35 +11,44 @@ from django.db.transaction import atomic
 from rest_framework import status
 from rest_framework.exceptions import MethodNotAllowed
 
-# class SpliterViewSet(ModelViewSet):
-#     lookup_field = 'pk'
-#     def get_permissions(self):
-#         request = self.request
+class SpliterViewSet(ModelViewSet):
+    lookup_field = 'pk'
+    def get_permissions(self):
+        request = self.request
 
-#         if request.method == 'destroy' or request.method == 'update' or request.method == 'partial_update':
-#             return [IsAuthorOrReadOnly()]
-#         elif request.method == 'create':
-#             return [IsAuthenticated()]
-#         else:
-#             return [AllowAny()]
+        if request.method == 'destroy' or request.method == 'update' or request.method == 'partial_update':
+            return [IsAuthorOrReadOnly()]
+        elif request.method == 'create':
+            return [IsAuthenticated()]
+        else:
+            return [AllowAny()]
         
-#     def get_queryset(self):
-#         return Spliter.objects.all()
+    def get_queryset(self):
+        return Spliter.objects.all()
     
-#     def get_serializer(self, *args, **kwargs):
-#         return SpliterSerializer(*args,context=self.get_serializer_context(),**kwargs)
+    def get_serializer(self, *args, **kwargs):
+        return SpliterSerializer(*args,context=self.get_serializer_context(),**kwargs)
     
-#     def get_serializer_context(self):
-#         return {'request':self.request}
+    def get_serializer_context(self):
+        return {'request':self.request}
     
-#     def create(self, request, *args, **kwargs):
-#         data = request.data
+    @transaction.atomic
+    def create(self, request, *args, **kwargs):
+        data = request.data.copy()
+        
+        friends_data = data.pop("added_friends")
+        
 
-#         serializer = self.get_serializer(data=data)
-#         serializer.is_valid(raise_exception=True)
-#         serializer.save(user = request.user)
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        obj = serializer.save(user = request.user)
+        
 
-#         return Response(serializer.data,status=status.HTTP_200_OK)
+        for fd in friends_data:
+            user = CustomUser.objects.get(id = fd['user'])
+            share_amount = fd['share_amount']
+            SplitShare.objects.create(expense = obj,user = user,share_amount=share_amount)
+        return Response(serializer.data,status=status.HTTP_200_OK)
 
 
 class FriendRequestsViewSet(ModelViewSet):
