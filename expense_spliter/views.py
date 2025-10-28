@@ -11,6 +11,28 @@ from django.db.transaction import atomic
 from rest_framework import status
 from rest_framework.exceptions import MethodNotAllowed
 
+class SplitShareViewSet(ModelViewSet):
+    lookup_field = 'pk'
+
+    def get_permissions(self):
+        request = self.request
+        user = request.user
+
+        if user.is_staff or user.is_superuser:
+            return [AllowAny()]
+        
+        if request.method in ['destroy','update','partial_update']:
+            return [IsUserOrReadOnly()]
+        else:
+            return [IsAuthenticated()]  
+        
+    def get_serializer(self, *args, **kwargs):
+        return SpliteShareSerializer(*args,context=self.get_serializer_context(),**kwargs)
+
+    def get_serializer_context(self):
+        return {'request':self.request}
+            
+
 class SpliterViewSet(ModelViewSet):
     lookup_field = 'pk'
     def get_permissions(self):

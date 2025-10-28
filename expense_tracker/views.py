@@ -1,6 +1,6 @@
 from django.shortcuts import render
-from expense_spliter.models import FriendRequest
-from expense_spliter.serializers import FriendRequestSerializer
+from expense_spliter.models import FriendRequest,SplitShare,Spliter
+from expense_spliter.serializers import FriendRequestSerializer,SpliteShareSerializer,SpliterSerializer
 from .models import *
 from .serializers import *
 from rest_framework.decorators import action
@@ -8,6 +8,7 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
+from django.db.models import QuerySet
 
 
 class CustomUserViewset(ModelViewSet):
@@ -35,6 +36,24 @@ class CustomUserViewset(ModelViewSet):
         user = self.get_object()
         received_requests = FriendRequest.objects.filter(accepting_person = user)
         serializer = FriendRequestSerializer(received_requests,context=self.get_serializer_context(),many=True)
+
+        return Response(serializer.data,status=status.HTTP_200_OK)
+    
+    @action(detail=True,methods=['get'],permission_classes=[IsAuthenticated])
+    def pending_payments(self,request,pk=None):
+        user = self.get_object()
+        payments = SplitShare.objects.filter(user = user)
+        serializer = SpliteShareSerializer(payments,context=self.get_serializer_context(),many=True)
+
+        return Response(serializer.data,status=status.HTTP_200_OK)
+    
+    @action(detail=True,methods=['get'],permission_classes=[IsAuthenticated])
+    def pending_payment_to_receive(self,request,pk=None):
+        user = request.user
+        
+        ss = SplitShare.objects.filter(expense__user = user)
+
+        serializer = SpliteShareSerializer(ss,context=self.get_serializer_context(),many=True)
 
         return Response(serializer.data,status=status.HTTP_200_OK)
 

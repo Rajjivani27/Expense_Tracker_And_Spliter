@@ -7,14 +7,19 @@ from rest_framework.exceptions import ValidationError
 from rest_framework import status
 
 class SpliteShareSerializer(serializers.ModelSerializer):
+    expense = serializers.StringRelatedField(read_only=True)
     class Meta:
         model = SplitShare
-        fields = ['user','share_amount']
+        fields = ['expense','user','share_amount','is_paid']
 
     def get_fields(self):
         fields = super().get_fields()
 
         request = self.context['request']
+
+        if request.method != 'get':
+            fields['expense'].read_only = True
+            fields['is_paid'].read_only = True
 
         queryset = Friends.objects.filter(Q(person1 = request.user) | Q(person2 = request.user))
 
@@ -35,6 +40,7 @@ class SpliteShareSerializer(serializers.ModelSerializer):
 
 class SpliterSerializer(serializers.ModelSerializer):
     user = serializers.CharField(read_only=True)
+    
 
     class Meta:
         model = Spliter
